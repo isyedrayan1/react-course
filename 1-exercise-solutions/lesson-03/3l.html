@@ -14,18 +14,13 @@
     <script src="https://unpkg.com/supersimpledev/babel.js"></script>
     <script type="text/babel">
       function ChatInput({ chatMessages, setChatMessages }) {
-        //This state will be true when waiting for the chatbot’s response, and false otherwise.
-        
-        const [isLoading, setIsLoading]=React.useState(false);
         const [inputText, setInputText] = React.useState("");
 
         function saveInputText(event) {
           setInputText(event.target.value);
         }
 
-        function sendMessage() {
-          //Prevent sending a new message if isLoading is true or inputText is empty
-          if (isLoading || inputText === "") return;
+        async function sendMessage() {
           const newChatMessages = [
             ...chatMessages,
             {
@@ -35,34 +30,28 @@
             },
           ];
           setChatMessages(newChatMessages);
-
-          const response = Chatbot.getResponse(inputText);
+          setInputText("");
+          //Add Loading message right after sending message until the response is recieved and it will automatically change.
           setChatMessages([
             ...newChatMessages,
             {
-              message: 'Loading...',
+              message: 'Thinking...',
               sender: "robot",
               id: crypto.randomUUID(),
             },
           ]);
           setInputText("");
-          //Set isLoading to true when you send a message
-          //Right after you add the "Loading..." message, set isLoading to true.
-          setIsLoading(true);
-
-          //Using setTimeout we can control is loading state
-          setTimeout(()=>{
-            setChatMessages([
-              ...newChatMessages,
-              {
-                message: response,
-                sender: "robot",
-                id: crypto.randomUUID(),
-              },
-            ]);
-            //Set isLoading to false after the response arrives Inside your setTimeout, after you set the real response, set isLoading back to false.
-          setIsLoading(false);
-          }, 500);
+          const response = await Chatbot.getResponseAsync(inputText);
+          
+          setChatMessages([
+            ...newChatMessages,
+            {
+              message: response,
+              sender: "robot",
+              id: crypto.randomUUID(),
+            },
+          ]);
+          setInputText("");
         }
         
         return (
@@ -87,18 +76,6 @@
       }
 
       function ChatMessage({ message, sender }) {
-        //const message = props.message;
-        //const sender = props.sender;
-        //const { message, sender } = props;
-
-        /*if (sender === "robot") {
-          return (
-            <div>
-              <img src="img/robot.png" width="50" />
-              {message}
-            </div>
-          );
-        }*/
         return (
           <div>
             {sender === "robot" && <img src="img/robot.png" width="50" />}
